@@ -1,0 +1,67 @@
+#!/bin/bash
+#==============================================
+#    author:
+#    date: 2018-07-15
+#    description:
+#==============================================
+. /etc/init.d/functions
+NAME=confd
+PIDFILE=`ps -fe|grep confd|grep -v grep|wc -l`
+confd_usage(){
+    echo "Usage: /etc/init.d/confd {start|stop}"
+
+}
+confd_start(){
+    nohup /usr/bin/confd -watch -backend etcd -node http://192.168.5.128:2379 >/var/log/confd.log 2>&1 & 
+    RV=$?
+    [ $RV -eq 0 ] && {
+        action "$NAME start success" /bin/true
+
+    } || {
+
+        action "$NAME start failed" /bin/false
+
+    }
+
+}
+
+confd_stop(){
+    kill -9 `ps -fe|grep -w /usr/bin/confd|grep -v grep|awk '{print $2}'` &>/dev/null && RV=$?
+    [ $RV -eq 0 ] && {
+        action "$NAME stop success" /bin/true
+
+    } || {
+
+        action "$NAME stop failed" /bin/false
+
+    }
+
+}
+
+confd_status(){
+    [ $PIDFILE -eq 3 ] && {
+        echo "$NAME is running..." 
+    } || {
+        echo "$NAME is stoped"
+    }
+
+}
+
+case $1 in
+    start)
+        confd_start
+        ;;
+    stop)
+        confd_stop
+        ;;
+    status)
+        confd_status
+        ;;
+    restart)
+        confd_stop
+        confd_start
+        ;;
+    *)
+        confd_usage
+
+esac
